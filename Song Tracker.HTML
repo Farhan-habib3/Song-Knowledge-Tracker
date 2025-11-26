@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Song Knowledge Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            font-family: 'Inter', sans-serif;
+        }
+        .btn-know {
+            background-color: #10B981; /* Emerald 500 */
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .btn-know:hover {
+            background-color: #059669; /* Emerald 600 */
+        }
+        .btn-know:active {
+            transform: scale(0.98);
+            box-shadow: 0 0 0 rgba(0,0,0,0);
+        }
+        .btn-dont-know {
+            background-color: #EF4444; /* Red 500 */
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .btn-dont-know:hover {
+            background-color: #DC2626; /* Red 600 */
+        }
+        .btn-dont-know:active {
+            transform: scale(0.98);
+            box-shadow: 0 0 0 rgba(0,0,0,0);
+        }
+        .shadow-custom {
+            box-shadow: 0 8px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+
+    <div id="app" class="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 md:p-8">
+        <h1 class="text-3xl font-extrabold text-gray-900 mb-4 text-center">
+            Song Knowledge Tester
+        </h1>
+
+        <!-- Naming Center -->
+        <div class="mb-6">
+            <label for="playlist-name-input" class="block text-sm font-medium text-gray-700 mb-1">Session/Playlist Name (Optional)</label>
+            <input type="text" id="playlist-name-input" placeholder="e.g., Chill Beats Session, Workout Playlist"
+                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
+        </div>
+        <!-- End Naming Center -->
+
+        <!-- Combined Header: Song Number Display and Reset Button -->
+        <div class="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
+            <p class="text-xl font-semibold text-gray-700 flex items-center space-x-2">
+                <span>This is song number</span>
+                <span id="song-count-display" class="text-3xl font-black text-indigo-600">0</span>
+            </p>
+            <button onclick="resetLog()"
+                class="py-2 px-4 bg-yellow-500 text-white font-medium rounded-lg hover:bg-yellow-600 transition duration-150 focus:outline-none focus:ring-2 focus:ring-yellow-400">
+                Reset All
+            </button>
+        </div>
+
+        <!-- Decisions Summary Panel -->
+        <div class="mb-8 text-center bg-gray-50 p-4 rounded-lg border border-gray-200">
+            <p class="text-xl text-gray-600 mb-3 font-semibold">Current Score</p>
+            <div class="flex justify-around space-x-4">
+                <div class="w-1/2">
+                    <p class="text-2xl font-bold text-green-600">Known (Yes)</p>
+                    <p id="known-count" class="text-5xl font-black mt-1">0</p>
+                </div>
+                <div class="w-1/2 border-l border-gray-300 pl-4">
+                    <p class="text-2xl font-bold text-red-600">Unknown (No)</p>
+                    <p id="dont-know-count" class="text-5xl font-black mt-1">0</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Decision Buttons (Know / Don't Know) -->
+        <div class="flex space-x-4 mb-6">
+            <button id="know-btn" onclick="logDecision(true)"
+                class="btn-know flex-1 py-4 text-white font-bold text-lg rounded-xl shadow-custom hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-emerald-300 transform">
+                I Know This Song
+            </button>
+            <button id="dont-know-btn" onclick="logDecision(false)"
+                class="btn-dont-know flex-1 py-4 text-white font-bold text-lg rounded-xl shadow-custom hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-red-300 transform">
+                I Don't Know
+            </button>
+        </div>
+
+        <!-- Undo Button (Matching height/style of decision buttons) -->
+        <div class="mb-8">
+            <button id="undo-btn" onclick="undoLastAction()" disabled
+                class="w-full py-4 text-gray-700 font-semibold text-lg bg-gray-200 rounded-xl shadow-md hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition duration-150">
+                Undo Last Action
+            </button>
+        </div>
+        
+        <!-- Spreadsheet Preview & Download -->
+        <div class="mb-6 border-t pt-4 border-gray-200">
+            <h3 class="text-lg font-bold text-gray-800 mb-2">Spreadsheet Log (<span id="log-size">0</span> entries)</h3>
+            <div id="log-preview" class="max-h-32 overflow-y-auto bg-gray-50 p-3 border rounded-lg text-sm font-mono text-gray-700">
+                <!-- Log entries will appear here -->
+                <p class="text-center text-gray-400 italic">No songs logged yet.</p>
+            </div>
+            <button onclick="downloadData()" id="download-btn" disabled
+                class="mt-3 w-full py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition disabled:opacity-50">
+                Download Spreadsheet (CSV)
+            </button>
+        </div>
+
+        <!-- Percentage Line at the Bottom -->
+        <div class="pt-4 border-t-2 border-indigo-500">
+            <p class="text-xl font-bold text-gray-800 flex justify-between items-center">
+                <span>Percentage of Known Songs:</span>
+                <span id="percentage-display" class="text-3xl font-extrabold text-green-600">0.00%</span>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Global Variables
+        let songLog = []; // The "spreadsheet" or history stack, where entries start with ID 1, 2, 3...
+
+        // DOM Elements
+        const songCountDisplayEl = document.getElementById('song-count-display');
+        const knownCountEl = document.getElementById('known-count');
+        const dontKnowCountEl = document.getElementById('dont-know-count');
+        const percentageDisplayEl = document.getElementById('percentage-display');
+        const undoBtn = document.getElementById('undo-btn');
+        const downloadBtn = document.getElementById('download-btn');
+        const logPreviewEl = document.getElementById('log-preview');
+        const logSizeEl = document.getElementById('log-size');
+
+        /**
+         * Logs a decision (Know or Don't Know) for the current song ID.
+         * The Song ID logged starts at 1 (using songLog.length + 1).
+         * @param {boolean} known - true for "Know", false for "Don't Know".
+         */
+        function logDecision(known) {
+            const decision = known ? 'Yes' : 'No';
+            const logEntry = {
+                // The ID is now explicitly 1-based for the spreadsheet
+                id: songLog.length + 1, 
+                known: known,
+                decision: decision,
+                timestamp: new Date().toISOString()
+            };
+            
+            songLog.push(logEntry);
+            updateUI();
+        }
+
+        /**
+         * Reverts the last decision made.
+         */
+        function undoLastAction() {
+            if (songLog.length === 0) return;
+
+            songLog.pop(); // Remove the last entry from the log
+            // The display count automatically adjusts because it uses songLog.length
+            
+            updateUI();
+        }
+
+        /**
+         * Resets the entire log and counters.
+         */
+        async function resetLog() {
+            // Uses the custom confirm function below
+            const confirmed = await confirm('Are you sure you want to reset all data? This cannot be undone.');
+
+            if (!confirmed) {
+                return;
+            }
+            songLog = [];
+            // Optionally clear the playlist name input on reset
+            document.getElementById('playlist-name-input').value = '';
+            updateUI();
+        }
+
+        /**
+         * Updates all dynamic elements on the UI (Total, Percentage, Next ID, Buttons).
+         */
+        function updateUI() {
+            const total = songLog.length;
+            const knownCount = songLog.filter(entry => entry.known).length;
+            const dontKnowCount = total - knownCount;
+            const percentage = total > 0 ? ((knownCount / total) * 100).toFixed(2) : '0.00';
+
+            // Update main stats
+            songCountDisplayEl.textContent = total; // This is the total number of logged songs (Song X), starting at 0
+            knownCountEl.textContent = knownCount;
+            dontKnowCountEl.textContent = dontKnowCount;
+            percentageDisplayEl.textContent = `${percentage}%`;
+
+            // Update button states
+            undoBtn.disabled = total === 0;
+            downloadBtn.disabled = total === 0;
+
+            // Update spreadsheet preview
+            updateLogPreview();
+        }
+
+        /**
+         * Populates the log preview area with the latest entries.
+         */
+        function updateLogPreview() {
+            logSizeEl.textContent = songLog.length;
+            
+            if (songLog.length === 0) {
+                logPreviewEl.innerHTML = '<p class="text-center text-gray-400 italic">No songs logged yet.</p>';
+                return;
+            }
+
+            // Show the last 5 entries
+            const previewEntries = songLog.slice(-5).reverse();
+            let html = '';
+
+            previewEntries.forEach(entry => {
+                const decisionClass = entry.known ? 'text-green-600' : 'text-red-600';
+                // The log preview shows the 1-based ID from the logEntry
+                html += `<p>Song #${entry.id}: <span class="${decisionClass} font-bold">${entry.decision}</span></p>`;
+            });
+
+            logPreviewEl.innerHTML = html;
+            
+            // Scroll to the bottom of the log preview
+            logPreviewEl.scrollTop = logPreviewEl.scrollHeight;
+        }
+
+        /**
+         * Downloads the song log as a CSV file (the required spreadsheet).
+         */
+        function downloadData() {
+            if (songLog.length === 0) return;
+
+            // Get the playlist name and sanitize it for use in the filename
+            const nameInput = document.getElementById('playlist-name-input').value.trim();
+            const defaultFilename = 'song_knowledge_log';
+
+            // Sanitize input: Replace non-alphanumeric chars (except dash/underscore/space) and convert spaces to underscores
+            let filename = nameInput.length > 0
+                ? nameInput.replace(/[^a-zA-Z0-9-_\s]/g, "").replace(/\s+/g, '_')
+                : defaultFilename;
+            
+            // Limit filename length to keep it clean
+            filename = filename.substring(0, 50);
+
+            // Append the date to the filename
+            const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '');
+            const finalFilename = `${filename}_${dateStr}.csv`;
+
+            const header = "Song ID,Known (Yes/No),Timestamp\n";
+            
+            // Map the log array to CSV rows
+            const csvRows = songLog.map(entry => 
+                `${entry.id},"${entry.decision}","${entry.timestamp}"`
+            ).join('\n');
+
+            const csvContent = header + csvRows;
+            
+            // Create a Blob and download link
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', finalFilename);
+            
+            // Append to body, click, and remove
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            // Show confirmation message
+            showNotification("Spreadsheet downloaded successfully!");
+        }
+
+        /**
+         * Simple custom notification/message box (replacing forbidden alert()).
+         * @param {string} message 
+         */
+        function showNotification(message) {
+            let notification = document.getElementById('notification-box');
+            if (!notification) {
+                notification = document.createElement('div');
+                notification.id = 'notification-box';
+                notification.className = "fixed top-5 right-5 bg-blue-600 text-white p-3 rounded-lg shadow-xl transition-opacity duration-300 opacity-0";
+                document.body.appendChild(notification);
+            }
+            
+            notification.textContent = message;
+            notification.classList.remove('opacity-0');
+            notification.classList.add('opacity-100');
+
+            setTimeout(() => {
+                notification.classList.remove('opacity-100');
+                notification.classList.add('opacity-0');
+            }, 3000);
+        }
+
+        // Custom confirmation dialog to replace window.confirm
+        function confirm(message) {
+            return new Promise((resolve) => {
+                const modalId = 'custom-confirm-modal';
+                let modal = document.getElementById(modalId);
+
+                if (!modal) {
+                    modal = document.createElement('div');
+                    modal.id = modalId;
+                    modal.className = 'fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 transition-opacity duration-300';
+                    modal.innerHTML = `
+                        <div class="bg-white rounded-xl p-6 shadow-2xl w-full max-w-sm">
+                            <p class="text-xl font-semibold mb-4 text-gray-800" id="confirm-message">${message}</p>
+                            <div class="flex justify-end space-x-3">
+                                <button id="cancel-btn" class="px-4 py-2 text-gray-600 bg-gray-200 rounded-lg hover:bg-gray-300 transition">Cancel</button>
+                                <button id="ok-btn" class="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 transition">Confirm</button>
+                            </div>
+                        </div>
+                    `;
+                    document.body.appendChild(modal);
+
+                    document.getElementById('ok-btn').onclick = () => {
+                        modal.remove();
+                        resolve(true);
+                    };
+                    document.getElementById('cancel-btn').onclick = () => {
+                        modal.remove();
+                        resolve(false);
+                    };
+                } else {
+                    document.getElementById('confirm-message').textContent = message;
+                }
+            });
+        }
+        
+        // Initial UI update on load
+        window.onload = updateUI;
+    </script>
+</body>
+</html>
